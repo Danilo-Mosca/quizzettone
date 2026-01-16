@@ -1,0 +1,16 @@
+{
+  "name": "backend-quizzettone",
+  "version": "1.0.0",
+  "description": "Server backend con i WebSocket per pulsantiera quiz",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "node --watch server.js"
+  },
+  "author": "Danilo Mosca",
+  "license": "ISC",
+  "dependencies": {
+    "ws": "^8.18.3"
+  }
+}
