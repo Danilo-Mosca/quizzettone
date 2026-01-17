@@ -1,7 +1,11 @@
 # 🧠 Quizzettone
 
-**Quizzettone** è un’applicazione **backend** costruita con **Node.js** che utilizza i **WebSocket** per comunicare in tempo reale con i client frontend.  
+**Quizzettone** è una WepApp
+
+Il **backend** realizzato con **Node.js** utilizza i **WebSocket** per comunicare in tempo reale con i client frontend.  
 Il server riceve e invia messaggi ai browser dei partecipanti, gestendo le risposte e gli eventi del quiz in modo immediato.
+
+Il **frontend** realizzato con **React** è costituito da una rotta comune per i **players** e da una rotta "/admin" riservata agli amministratori.
 
 L’app nasce con l’obiettivo di **sostituire la classica pulsantiera fisica dei quiz**, permettendo ai giocatori di partecipare semplicemente utilizzando il **browser web**.
 
@@ -35,7 +39,7 @@ Quizzettone è utilizzabile senza installare app dedicate ed è compatibile con:
 
 - **Node.js**
 - **WebSocket**
-- Frontend web (HTML / CSS / JavaScript) con React
+- **React** per il Frontend web (ovviamente insieme ad HTML / CSS / JavaScript)
 - Browser come interfaccia utente
 
 ## 📦 Avvio del progetto
@@ -52,7 +56,11 @@ Quizzettone è utilizzabile senza installare app dedicate ed è compatibile con:
 
 4. Avvia il server:
    ```bash
-   node index.js
+   npm run dev
+   ```
+5. Avvia il frontend per permettere l'accesso a tutti i dispositivi della rete locale (per i vari test):
+   ```bash
+   npm run dev -- --host
    ```
 
 ## ▶️ Utilizzo
@@ -66,8 +74,6 @@ Quizzettone è utilizzabile senza installare app dedicate ed è compatibile con:
 
 Il progetto è in evoluzione e può essere esteso con:
 
-- gestione delle squadre
 - classifiche
-- pannello admin
 - statistiche di gioco
 - interfaccia grafica avanzata
