@@ -161,6 +161,7 @@ wss.on('connection', (ws) => {
                     buzzerLocked = false;
                     console.log("Variabile buzzerLocked sblocca quiz: ", buzzerLocked);
                 }, 5000);
+                /********** Fine codice provvisorio **********/
             }
         }
 

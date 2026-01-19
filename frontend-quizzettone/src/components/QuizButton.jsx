@@ -30,7 +30,12 @@ export default function QuizButton() {
 
             // Aggiorna la lista giocatori subito (utile se arriva insieme a NAME_OK)
             if (msg.reconnect) {
-                // In caso di reconnect, il server invia subito PLAYERS_UPDATE
+                /* reconnect è un flag (booleano) che il server decide di aggiungere quando: un player era già conosciuto, si disconnette(refresh, 
+                chiusura tab, perdita rete), si riconnette usando lo stesso UUID.
+                Quindi: reconnect: false → nuovo giocatore, reconnect: true → giocatore già esistente che rientra. */
+
+                // In caso di reconnect, il server invia subito PLAYERS_UPDATE:
+                // Se il player si riconnette, non serve fare nulla nel frontend, perché il server si occuperà immediatamente di rimandare lo stato completo.
             }
         }
 
