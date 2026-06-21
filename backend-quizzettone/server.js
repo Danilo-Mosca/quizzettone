@@ -60,7 +60,7 @@ wss.on('connection', (ws) => {
             }
             return;
         }
-        
+
         // Caso 0: il giocatore si presenta
         /*** HELLO → handshake iniziale, arriva subito dopo l'apertura della socket
         handshake = processo di negoziazione iniziale tra due dispositivi (client e server) per stabilire una comunicazione sicura e affidabile
@@ -72,13 +72,20 @@ wss.on('connection', (ws) => {
             // Controllo se il playerId è presente in registeredPlayers:
             if (registeredPlayers.has(playerId)) {
                 const savedName = registeredPlayers.get(playerId);
-                
+
                 ws.playerId = playerId;
                 ws.playerName = savedName;
                 ws.role = role || 'player';
+
+                // Player riconnesso → manteniamo lo stato
+                const existing = connectedPlayers.get(playerId);
+
                 // Se il playerId è presente, lo setto nell'oggetto di tipo Map() "connectedPlayers":
-                connectedPlayers.set(playerId, savedName);
-                
+                connectedPlayers.set(playerId, {
+                    name: savedName,
+                    canBuzz: existing?.canBuzz ?? false
+                });
+
                 // Allora mando un oggetto Json contenente un un type: "NAME_OK" per far capire che per quell'UUID già registrato 
                 // è presente un nome , e quindi lo invio al client:
                 ws.send(JSON.stringify({
@@ -95,8 +102,8 @@ wss.on('connection', (ws) => {
             }
 
             // 🚨 CASO 2: UUID NUOVO → PASSO AL CONTROLLO DEL NOME
-            // controlla unicià del nome (escludendo se stesso)
-            for (const [id, name] of registeredPlayers) {
+            // controlla unicià del nome (escludendo se stesso). Controllo se il nome è duplicato
+            for (const name of registeredPlayers.values()) {
                 // Controllo se il nome del giocatore è uguale ad uno già presente su "registeredPlayers".
                 // IMPORTANTE: prima del confronto tra le stringhe del nome porto queste tutte in maiuscolo (per evitare il case sensitive dei nomi)
                 // con il metodo "toUpperCase()" ed elimino gli spazi alla sinistra e alla destra del stringa con il metodo "trim()"
@@ -120,8 +127,11 @@ wss.on('connection', (ws) => {
             ws.role = role || 'player';    // Creo un'altra chiave dinamica per il ruolo del client: giocatore o admin (conduttore). Andava bene anche: ws.role = data.role
 
             // Aggiungo il nuovo nome nell'oggetto di tipo Map() "connectedPlayers":
-            connectedPlayers.set(playerId, playerName);
-            // console.log(connectedPlayers);
+            // 🔒 Player parte BLOCCATO
+            connectedPlayers.set(playerId, {
+                name: playerName,
+                canBuzz: false
+            });
 
             // Allora mando un oggetto Json contenente un un type: "NAME_OK" per far capire che il nome è stato preso correttamente
             ws.send(JSON.stringify({ type: 'NAME_OK' }));
@@ -132,21 +142,24 @@ wss.on('connection', (ws) => {
             broadcastPlayers();
             return;
         }
-        
+
         /**
          * Caso 1: il giocatore preme il pulsante BUZZ
-         * BUZZ → SOLO PLAYER
+         * BUZZ → SOLO PLAYER SE ABILITATO
          */
         if (data.type === 'BUZZ') {
             // Se non è un player (quindi un admin) eseguo un return
             if (ws.role !== 'player') return;
+
+            const player = connectedPlayers.get(ws.playerId);
+            if (!player || !player.canBuzz) return;
 
             /* Altrimenti controllo se qualcuno ha già premuto e stampo a schermo eventuale vincitore */
             // Se nessuno ha ancora premuto
             if (!buzzerLocked) {
                 buzzerLocked = true;        // blocchiamo il buzzer
                 // firstPlayer = data.player; // salviamo chi ha vinto VECCHIO CODICE
-                firstPlayer = ws.playerName;    // salviamo chi ha vinto, lo decide il server e così abbiamo meno latenza
+                firstPlayer = player.name;    // salviamo chi ha vinto, lo decide il server e così abbiamo meno latenza
 
                 console.log('🚨 PRIMO BUZZ:', firstPlayer);
 
@@ -166,20 +179,41 @@ wss.on('connection', (ws) => {
         }
 
         /**
-         * Caso 2: reset del quiz (tipicamente dal conduttore)
-         * RESET → SOLO ADMIN
+         * 🎛️ ADMIN → abilita / disabilita BUZZ
          */
-        if (data.type === 'RESET') {
+        if (data.type === 'ADMIN_SET_CAN_BUZZ') {
+            if (ws.role !== 'admin') return;
+
+            const { playerId, canBuzz } = data;
+            const player = connectedPlayers.get(playerId);
+            if (!player) return;
+
+            player.canBuzz = canBuzz;
+            broadcastPlayers();
+        }
+        
+        /**
+         * Caso 3: reset del quiz (tipicamente dal conduttore)
+         * ADMIN → reset player
+         */
+        if (data.type === 'ADMIN_FORCE_RESET_PLAYER') {
             // Se non admin rifiuto il reset
             if (ws.role != 'admin') {
                 console.log(`⛔ RESET rifiutato (non admin)`);
                 return;
             }
-            buzzerLocked = false;
-            firstPlayer = null;
+            
+            const { playerId } = data;
 
-            // Avvisiamo tutti che il quiz è resettato
-            broadcast({ type: 'RESET' });
+            wss.clients.forEach(client => {
+                if (client.playerId === playerId) {
+                    client.send(JSON.stringify({ type: 'FORCE_RESET' }));
+                }
+            });
+
+            connectedPlayers.delete(playerId);
+            registeredPlayers.delete(playerId);
+            broadcastPlayers();
         }
     });
 
@@ -220,9 +254,11 @@ function broadcast(message) {
 /**
  * 🔴 STEP 3
  * Invia la lista dei giocatori connessi a TUTTI i client
+ * 👥 Aggiornamento lista player
  */
 function broadcastPlayers() {
-    const players = Array.from(connectedPlayers.values());
+    /*-------- OLD CODE /*-------- */
+    // const players = Array.from(connectedPlayers.values());
     /* Spiegazione della riga di codice di sopra:
     connectedPlayers.values() ---> Restituisce un iteratore che contiene tutti i valori della Map (non le chiavi).
     Array.from(...)           ---> Converte quell’iteratore in un array vero e proprio.
@@ -238,7 +274,16 @@ function broadcastPlayers() {
 
     console.log(players);   // ["Mario", "Luigi"]
     */
-    
+    /*-------- END OLD CODE /*-------- */
+
+    const players = Array.from(connectedPlayers.entries()).map(
+        ([id, data]) => ({
+            id,
+            name: data.name,
+            canBuzz: data.canBuzz
+        })
+    );
+
     broadcast({
         type: 'PLAYERS_UPDATE',
         players

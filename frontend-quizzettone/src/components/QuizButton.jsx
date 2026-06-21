@@ -15,6 +15,7 @@ export default function QuizButton() {
     const [winner, setWinner] = useState(null);                     // Primo giocatore che ha premuto BUZZ. Variabile di stato che controlla chi ha premuto per primo il pulsante
     const [error, setError] = useState(null);                       // Messaggi di errore (es. nome già preso)
     const [players, setPlayers] = useState([]);                     // Lista dei giocatori connessi
+    const [canBuzz, setCanBuzz] = useState(false);                  // Stato server per abilitare/disabilitare il pulsante BUZZ
 
 
     /** Inizializziamo la socket WebSocket */
@@ -27,18 +28,9 @@ export default function QuizButton() {
 
             // Salva sempre il nome nel localStorage, anche in caso di reconnect
             setPlayerName(playerName || msg.playerName);
-
-            // Aggiorna la lista giocatori subito (utile se arriva insieme a NAME_OK)
-            if (msg.reconnect) {
-                /* reconnect è un flag (booleano) che il server decide di aggiungere quando: un player era già conosciuto, si disconnette(refresh, 
-                chiusura tab, perdita rete), si riconnette usando lo stesso UUID.
-                Quindi: reconnect: false → nuovo giocatore, reconnect: true → giocatore già esistente che rientra. */
-
-                // In caso di reconnect, il server invia subito PLAYERS_UPDATE:
-                // Se il player si riconnette, non serve fare nulla nel frontend, perché il server si occuperà immediatamente di rimandare lo stato completo.
-            }
         }
 
+        // ❌ Nome già preso
         // Se il nome è già presente e quindi non è stato preso, ovvero quando il type del messaggio è === 'NAME_TAKEN': SERVER → NAME_TAKEN
         if (msg.type === 'NAME_TAKEN') {
             setError(msg.message);  // Setto la variabile di stato "setError" con la stringa ricevuta dal server: "Nome giocatore già presente, scegline un altro!"
@@ -58,14 +50,28 @@ export default function QuizButton() {
             }, 5000);
             /********** FINE DEL CODICE PROVVISORIO **********/
         }
-        // Reset del quiz: SERVER → RESET
+
+        // Reset del quiz generico: SERVER → RESET
         if (msg.type === 'RESET') {
             setWinner(null);
         }
 
-        // Aggiornamento lista giocatori dal server: SERVER → PLAYERS_UPDATE
+        // Aggiornamento lista giocatori dal server: SERVER → PLAYERS_UPDATE, include stato canBuzz
         if (msg.type === 'PLAYERS_UPDATE') {
-            setPlayers(msg.players);
+            // Trova il mio player per aggiornare canBuzz
+            const me = msg.players.find(p => p.name === playerName);
+            if (me) {
+                setCanBuzz(me.canBuzz); // abilita/disabilita pulsante in base al server
+            }
+            
+            // Lista dei player solo per mostrare i nomi
+            setPlayers(msg.players.map(p => p.name));
+        }
+
+        // 🧨 Admin forza reset del player → cancella localStorage + reload
+        if (msg.type === 'FORCE_RESET') {
+            resetPlayerId();           // Rimuove UUID + nome
+            window.location.reload();  // Ricarica pagina
         }
     });
 
@@ -86,7 +92,7 @@ export default function QuizButton() {
         if (confirmReset) {
             // Richiamo la funzione resetPlayerId() dal file "playerIdentity.js" che eliminerà l'UUID dal localStorage del client (giocatore) che lo ha richiesto
             resetPlayerId();            // Rimuove UUID
-            window.location.reload();   //Refresho la pagina per potergli assegnare un nuovo nome, un nuovo UUID e così una nuova identità
+            window.location.reload();   // Refresho la pagina per potergli assegnare un nuovo nome, un nuovo UUID e così una nuova identità
         }
     }
 
@@ -122,7 +128,7 @@ export default function QuizButton() {
         <>
             <button
                 onMouseDown={buzz}  // onMouseDown più veloce di onClick
-                disabled={winner}   // Disabilitato se già c'è un vincitore
+                disabled={!canBuzz || winner}  // Disabilitato se il server lo blocca o se c'è già un vincitore
                 style={{
                     fontSize: '3rem',
                     padding: '2rem',
