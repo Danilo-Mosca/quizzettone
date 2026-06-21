@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuizSocket } from "../hooks/useQuizSocket";     // Importo l'hook personalizzato useQuizSocket che crea la connessione WebSocket, gestisce onmessage
 import { useAdminAuth } from "../hooks/useAdminAuth";       // Importo l'hook personalizzato useAdminAuth che gestisce stato admin (isAdmin), gestisce login, gestisce logout
 import AdminLogin from "./AdminLogin";      // Importo il componente AdminLogin.jsx
@@ -60,6 +60,18 @@ function Admin() {
             setPlayers(msg.players);
         }
     });
+
+    // MODIFICA: Quando l'admin è autenticato sul client (isAdmin === true),
+    // inviamo automaticamente la password al server WebSocket tramite `sendAdminLogin`.
+    // Questo accade al primo login e ad ogni refresh della pagina (sfruttando il localStorage).
+    useEffect(() => {
+        if (isAdmin) {
+            const password = localStorage.getItem('quiz_admin_password');
+            if (password) {
+                socket.sendAdminLogin(password);
+            }
+        }
+    }, [isAdmin]);
 
     // 🔐 NON loggato → mostra login
     if (!isAdmin) {

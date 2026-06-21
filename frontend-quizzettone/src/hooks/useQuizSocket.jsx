@@ -4,7 +4,9 @@ import { getOrCreatedPlayerId } from '../utils/playerIdentity';     // Importo l
 export function useQuizSocket(role, onMessage) {
     // useRef mantiene la stessa socket tra i render
     const socketRef = useRef(null);     // Senza useRef, ogni render creerebbe una nuova socket e chiuderebbe quella precedente
-    const helloQueueRef = useRef([]); // Coda dei messaggi HELLO da inviare
+    // MODIFICA: Utilizziamo una coda di messaggi generica (non solo per HELLO)
+    // per accumulare tutti i comandi inviati prima che la socket diventi OPEN.
+    const messageQueueRef = useRef([]); // Coda dei messaggi da inviare appena la socket si apre
 
     // useEffect eseguito solo al montaggio del componente
     useEffect(() => {
@@ -18,9 +20,9 @@ export function useQuizSocket(role, onMessage) {
         /* Appena la connessione è aperta (onopen), inviamo tutti messaggi di HELLO al server. Questo serve al server per identificare ogni client */
         ws.onopen = () => {
             console.log('🔌 WebSocket aperta');
-            // Appena la socket è pronta, inviamo tutti i messaggi HELLO in coda
-            while (helloQueueRef.current.length > 0) {
-                const payload = helloQueueRef.current.shift();
+            // MODIFICA: Appena la socket è pronta, inviamo tutti i messaggi in coda (inclusi login admin e azioni dei player)
+            while (messageQueueRef.current.length > 0) {
+                const payload = messageQueueRef.current.shift();
                 ws.send(JSON.stringify(payload));
             }
         };
@@ -54,10 +56,9 @@ export function useQuizSocket(role, onMessage) {
         è equivalente a quella di seguito: */
         if (!ws || ws.readyState !== WebSocket.OPEN) {
             console.warn('⚠️ WebSocket non pronta, messaggio messo in coda:', payload);
-            // Se non pronta, mettiamo in coda i messaggi HELLO (solo HELLO)
-            if (payload.type === 'HELLO') {
-                helloQueueRef.current.push(payload);
-            }
+            // MODIFICA: Mettiamo in coda qualsiasi tipo di messaggio in modo da poterlo inviare automaticamente 
+            // appena la connessione si apre, evitando la perdita di dati per race condition (ad esempio all'avvio dell'admin).
+            messageQueueRef.current.push(payload);
             return;
         }
         // Se la socket esiste allora inviamo il messaggio!
@@ -130,6 +131,17 @@ export function useQuizSocket(role, onMessage) {
         });
     };
     
+    /**
+     * MODIFICA: Funzione per autenticare l'admin inviando la password al server.
+     * Questo assegna il ruolo 'admin' alla socket corrente lato backend.
+     */
+    function sendAdminLogin(password) {
+        safeSend({
+            type: 'ADMIN_LOGIN',
+            password
+        });
+    }
+    
     // Ritorna solo le funzioni per interagire con il server
     return {
         sendWelcome,
@@ -137,6 +149,7 @@ export function useQuizSocket(role, onMessage) {
         reset,
         setPlayerCanBuzz,
         forceResetPlayer,
+        sendAdminLogin, // MODIFICA: Esportiamo la funzione di login admin per essere usata nel componente Admin
         safeSend
     };
 }

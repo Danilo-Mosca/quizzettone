@@ -41,14 +41,9 @@ export default function QuizButton() {
         // Se il server annuncia il vincitore: SERVER → WINNER
         if (msg.type === 'WINNER') {
             setWinner(msg.player);
-
-            /********** setTimeout() PROVVISORIO Setto provvisoriamente un timeout per ripristinare la variabile la variabile di stato "winner" a null
-             *  dato che ancora non sviluppo la sezione "reset del quiz" del conduttore, una volta sviluppata bisogna togliere il setTimeOut() **********/
-            setTimeout(() => {
-                setWinner(null);
-                console.log("setWinner reimpostato a null per sbloccare il pulsante");
-            }, 5000);
-            /********** FINE DEL CODICE PROVVISORIO **********/
+            // MODIFICA: Rimosso il setTimeout() provvisorio che azzerava il vincitore dopo 5 secondi.
+            // Ora il reset del vincitore avviene correttamente quando l'admin preme "RESET QUIZ",
+            // che invia { type: 'RESET' } e viene gestito dal blocco sottostante.
         }
 
         // Reset del quiz generico: SERVER → RESET
@@ -58,8 +53,10 @@ export default function QuizButton() {
 
         // Aggiornamento lista giocatori dal server: SERVER → PLAYERS_UPDATE, include stato canBuzz
         if (msg.type === 'PLAYERS_UPDATE') {
-            // Trova il mio player per aggiornare canBuzz
-            const me = msg.players.find(p => p.name === playerName);
+            // MODIFICA: Identifichiamo il giocatore corrente confrontando l'ID unico (playerId)
+            // anziché il nome. Questo è molto più robusto ed evita disallineamenti o bug
+            // qualora il nome non sia inserito o contenga spazi extra.
+            const me = msg.players.find(p => p.id === playerId);
             if (me) {
                 setCanBuzz(me.canBuzz); // abilita/disabilita pulsante in base al server
             }

@@ -15,6 +15,10 @@ export function useAdminAuth() {
         // (più avanti la spostiamo su server)
         if (password === 'quiz123') {
             localStorage.setItem(STORAGE_KEY, 'true');
+            // MODIFICA: Salviamo la password dell'admin nel localStorage.
+            // Questo ci permetterà di ri-autenticare automaticamente la connessione WebSocket
+            // in caso di refresh della pagina senza richiedere all'utente di reinserire la password.
+            localStorage.setItem('quiz_admin_password', password);
             setIsAdmin(true);
             return true;
         }
@@ -24,6 +28,9 @@ export function useAdminAuth() {
     // Funzione logout() che rimuove dal local storage la chiave e il valore di STORAGE_KEY:
     function logout() {
         localStorage.removeItem(STORAGE_KEY);
+        // MODIFICA: Rimuoviamo la password dell'admin dal localStorage al momento del logout
+        // per evitare che rimanga memorizzata sul dispositivo.
+        localStorage.removeItem('quiz_admin_password');
         setIsAdmin(false);
     }
 

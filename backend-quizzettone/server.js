@@ -53,6 +53,11 @@ wss.on('connection', (ws) => {
                 }));
 
                 console.log('🔐 Admin autenticato');
+
+                // MODIFICA: Inviamo immediatamente la lista aggiornata di tutti i giocatori
+                // all'admin appena autenticato, in modo che l'interfaccia si allinei subito
+                // anche in caso di login iniziale o di refresh della pagina.
+                broadcastPlayers();
             } else {
                 ws.send(JSON.stringify({
                     type: 'ADMIN_DENIED'
@@ -168,13 +173,9 @@ wss.on('connection', (ws) => {
                     type: 'WINNER',
                     player: firstPlayer
                 });
-
-                /********** setTimeout() PROVVISORIO Setto provvisoriamente un timeout per ripristinare la variabile buzzerLocked a false dato che ancora non sviluppo la sezione "reset del quiz" del conduttore, una volta sviluppata bisogna togliere il setTimeOut() **********/
-                setTimeout(() => {
-                    buzzerLocked = false;
-                    console.log("Variabile buzzerLocked sblocca quiz: ", buzzerLocked);
-                }, 5000);
-                /********** Fine codice provvisorio **********/
+                // MODIFICA: Rimosso il setTimeout() provvisorio che sbloccava il buzzer automaticamente
+                // dopo 5 secondi. Ora il reset viene gestito correttamente dall'admin tramite il pulsante
+                // "RESET QUIZ", che invia { type: 'RESET' } e viene elaborato dal nuovo handler dedicato.
             }
         }
 
@@ -214,6 +215,32 @@ wss.on('connection', (ws) => {
             connectedPlayers.delete(playerId);
             registeredPlayers.delete(playerId);
             broadcastPlayers();
+        }
+
+        /**
+         * MODIFICA: Reset generale del quiz (pulsante "RESET QUIZ" del conduttore)
+         * ADMIN → azzera lo stato del buzzer e notifica tutti i client
+         * 
+         * Prima questo handler mancava completamente: il frontend inviava { type: 'RESET' }
+         * ma il server non lo gestiva, quindi il reset del quiz non produceva alcun effetto.
+         */
+        if (data.type === 'RESET') {
+            // Verifichiamo che solo l'admin possa eseguire il reset generale
+            if (ws.role !== 'admin') {
+                console.log('⛔ RESET QUIZ rifiutato (non admin)');
+                return;
+            }
+
+            // Resettiamo lo stato del buzzer: il quiz può ripartire
+            buzzerLocked = false;   // Sblocchiamo il buzzer: ora tutti i player abilitati potranno premere di nuovo
+            firstPlayer = null;     // Azzeriamo il vincitore precedente
+
+            console.log('🔄 RESET QUIZ eseguito dall\'admin');
+
+            // Notifichiamo TUTTI i client connessi (player e admin) che il quiz è stato resettato.
+            // I player riceveranno il messaggio RESET e azzeranno la variabile di stato "winner",
+            // rendendo il pulsante BUZZ di nuovo visibile/premibile (se abilitato).
+            broadcast({ type: 'RESET' });
         }
     });
 
