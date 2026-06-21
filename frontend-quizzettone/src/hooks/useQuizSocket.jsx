@@ -109,6 +109,34 @@ export function useQuizSocket(role, onMessage) {
         });
     };
 
+    /**
+ * 🔓 ADMIN → abilita/disabilita il buzzer
+ */
+    const setPlayerCanBuzz = (playerId, canBuzz) => {
+        safeSend({
+            type: 'ADMIN_SET_CAN_BUZZ',
+            playerId,
+            canBuzz
+        });
+    };
+
+    /**
+     * 🧨 ADMIN → forza reset identità player
+     */
+    const forceResetPlayer = (playerId) => {
+        safeSend({
+            type: 'ADMIN_FORCE_RESET_PLAYER',
+            playerId
+        });
+    };
+    
     // Ritorna solo le funzioni per interagire con il server
-    return { sendWelcome, buzz, reset, safeSend };
+    return {
+        sendWelcome,
+        buzz,
+        reset,
+        setPlayerCanBuzz,
+        forceResetPlayer,
+        safeSend
+    };
 }
