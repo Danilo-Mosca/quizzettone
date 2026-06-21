@@ -76,19 +76,21 @@ wss.on('connection', (ws) => {
             // 🔁 CASO 1: UUID GIA' REGISTRATO (refresh / reconnect --------> quando si fa il refresh della pagina oppure ci si riconnette ad essa)
             // Controllo se il playerId è presente in registeredPlayers:
             if (registeredPlayers.has(playerId)) {
-                const savedName = registeredPlayers.get(playerId);
+                // MODIFICA: registeredPlayers ora memorizza un oggetto { name, canBuzz } anziché solo il nome.
+                // Questo permette di ripristinare lo stato del buzzer assegnato dall'admin anche dopo un refresh.
+                const savedData = registeredPlayers.get(playerId);
+                const savedName = savedData.name;
 
                 ws.playerId = playerId;
                 ws.playerName = savedName;
                 ws.role = role || 'player';
 
-                // Player riconnesso → manteniamo lo stato
-                const existing = connectedPlayers.get(playerId);
-
-                // Se il playerId è presente, lo setto nell'oggetto di tipo Map() "connectedPlayers":
+                // MODIFICA: Ora leggiamo canBuzz direttamente da registeredPlayers (dove viene mantenuto
+                // aggiornato da ADMIN_SET_CAN_BUZZ), invece di cercarlo in connectedPlayers che viene
+                // azzerato al disconnect. In questo modo il permesso assegnato dall'admin sopravvive al refresh.
                 connectedPlayers.set(playerId, {
                     name: savedName,
-                    canBuzz: existing?.canBuzz ?? false
+                    canBuzz: savedData.canBuzz  // lo stato canBuzz è ora persistente tra i refresh
                 });
 
                 // Allora mando un oggetto Json contenente un un type: "NAME_OK" per far capire che per quell'UUID già registrato 
@@ -108,11 +110,11 @@ wss.on('connection', (ws) => {
 
             // 🚨 CASO 2: UUID NUOVO → PASSO AL CONTROLLO DEL NOME
             // controlla unicià del nome (escludendo se stesso). Controllo se il nome è duplicato
-            for (const name of registeredPlayers.values()) {
-                // Controllo se il nome del giocatore è uguale ad uno già presente su "registeredPlayers".
+            for (const savedData of registeredPlayers.values()) {
+                // MODIFICA: registeredPlayers ora contiene oggetti { name, canBuzz }, quindi leggiamo savedData.name.
                 // IMPORTANTE: prima del confronto tra le stringhe del nome porto queste tutte in maiuscolo (per evitare il case sensitive dei nomi)
                 // con il metodo "toUpperCase()" ed elimino gli spazi alla sinistra e alla destra del stringa con il metodo "trim()"
-                if (name.toUpperCase().trim() === playerName.toUpperCase().trim()) {
+                if (savedData.name.toUpperCase().trim() === playerName.toUpperCase().trim()) {
                     // Allora mando un oggetto Json contenente un messaggio di giocatore già presente e un type: "nome preso":
                     ws.send(JSON.stringify({
                         type: 'NAME_TAKEN',
@@ -124,7 +126,9 @@ wss.on('connection', (ws) => {
 
             // INFINE SE IL NOME NON E' GIA' PRESENTE SALVO:
             // ✅ Registrazione nuova identità
-            registeredPlayers.set(playerId, playerName);    //aggiungo la nuova identità su "registeredPlayers"
+            // MODIFICA: registeredPlayers ora salva un oggetto { name, canBuzz } al posto della sola stringa del nome.
+            // canBuzz parte sempre a false: il player è bloccato finché l'admin non lo sblocca esplicitamente.
+            registeredPlayers.set(playerId, { name: playerName, canBuzz: false });
             // Creo una chiave dinamica "playerId" a cui associerò l'UUID salvato nel localStorage del client del giocatore:
             ws.playerId = playerId;    // Oppure andava bene anche: ws.playerId = data.playerId;
             // Creo una chiave dinamica "playerName" dell'oggetto ws per poterci salvare il nome del client appena connesso:
@@ -189,7 +193,14 @@ wss.on('connection', (ws) => {
             const player = connectedPlayers.get(playerId);
             if (!player) return;
 
+            // Aggiorniamo canBuzz nella sessione attiva
             player.canBuzz = canBuzz;
+
+            // MODIFICA: aggiorniamo canBuzz anche in registeredPlayers in modo che
+            // il permesso assegnato dall'admin venga mantenuto se il player fa un refresh della pagina.
+            const regPlayer = registeredPlayers.get(playerId);
+            if (regPlayer) regPlayer.canBuzz = canBuzz;
+
             broadcastPlayers();
         }
         
@@ -215,6 +226,24 @@ wss.on('connection', (ws) => {
             connectedPlayers.delete(playerId);
             registeredPlayers.delete(playerId);
             broadcastPlayers();
+        }
+
+        /**
+         * MODIFICA: Auto-deregistrazione del player (pulsante "Entra come nuovo giocatore")
+         * PLAYER → rimuove se stesso da registeredPlayers e connectedPlayers.
+         * 
+         * Senza questo handler, quando un player clicca "Entra come nuovo giocatore" e resetta
+         * il localStorage, il server manteneva ancora il vecchio nome in registeredPlayers.
+         * Risultato: se il player provava a rientrare con lo stesso nome, riceveva "Nome già presente".
+         */
+        if (data.type === 'PLAYER_UNREGISTER') {
+            if (ws.playerId) {
+                // Rimuoviamo il player sia dalla lista delle connessioni attive che dalle identità registrate
+                connectedPlayers.delete(ws.playerId);
+                registeredPlayers.delete(ws.playerId);
+                broadcastPlayers();
+                console.log(`🗑️ Player "${ws.playerName}" si è auto-deregistrato`);
+            }
         }
 
         /**

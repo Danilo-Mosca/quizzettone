@@ -19,7 +19,7 @@ export default function QuizButton() {
 
 
     /** Inizializziamo la socket WebSocket */
-    const { sendWelcome, buzz } = useQuizSocket('player', (msg) => {
+    const { sendWelcome, buzz, selfUnregister } = useQuizSocket('player', (msg) => {
         // Se il nome è stato preso, ovvero quando il type del messaggio è === 'NAME_OK': SERVER → NAME_OK
         if (msg.type === 'NAME_OK') {
             setJoined(true);    // Setto la variabile di stato "setJoined" a true. Il player è ufficialmente registrato
@@ -87,6 +87,10 @@ export default function QuizButton() {
         // dell'utente
         const confirmReset = confirm('Sei sicuro di voler entrare come nuovo player?');
         if (confirmReset) {
+            // MODIFICA: Prima di cancellare il localStorage, notifichiamo il server di rimuovere
+            // questa identità da registeredPlayers. Senza questo passaggio, il server manteneva
+            // il vecchio nome registrato e il player non poteva rientrare con lo stesso nome.
+            selfUnregister();
             // Richiamo la funzione resetPlayerId() dal file "playerIdentity.js" che eliminerà l'UUID dal localStorage del client (giocatore) che lo ha richiesto
             resetPlayerId();            // Rimuove UUID
             window.location.reload();   // Refresho la pagina per potergli assegnare un nuovo nome, un nuovo UUID e così una nuova identità

@@ -142,6 +142,16 @@ export function useQuizSocket(role, onMessage) {
         });
     }
     
+    /**
+     * MODIFICA: Auto-deregistrazione del player.
+     * Invia un messaggio al server per rimuovere la propria identità da registeredPlayers e connectedPlayers.
+     * Chiamata dal player PRIMA di resettare il localStorage con "Entra come nuovo giocatore",
+     * per evitare che il vecchio nome rimanga bloccato sul server anche dopo il reset locale.
+     */
+    function selfUnregister() {
+        safeSend({ type: 'PLAYER_UNREGISTER' });
+    }
+
     // Ritorna solo le funzioni per interagire con il server
     return {
         sendWelcome,
@@ -150,6 +160,7 @@ export function useQuizSocket(role, onMessage) {
         setPlayerCanBuzz,
         forceResetPlayer,
         sendAdminLogin, // MODIFICA: Esportiamo la funzione di login admin per essere usata nel componente Admin
+        selfUnregister, // MODIFICA: Esportiamo la funzione di auto-deregistrazione per il player
         safeSend
     };
 }

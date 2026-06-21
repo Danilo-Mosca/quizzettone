@@ -24,6 +24,8 @@ function Admin() {
      * ]
      */
     const [players, setPlayers] = useState([]);
+    // MODIFICA: Stato per mostrare nell'admin chi ha premuto il Buzz per primo, proprio come nella pagina del player.
+    const [winner, setWinner] = useState(null);
 
     /* SPIEGAZIONE DEL CODICE DI SEGUITO E DELLA CHIAMATA A useQuizSocket():
      * Quando entro come admin non vedrò mai il console.log('MSG: ', msg);
@@ -59,6 +61,15 @@ function Admin() {
         if (msg.type === 'PLAYERS_UPDATE') {
             setPlayers(msg.players);
         }
+        // MODIFICA: Gestiamo il messaggio WINNER anche nell'admin in modo da visualizzare
+        // chi ha premuto il Buzz per primo, esattamente come avviene nella pagina del player.
+        if (msg.type === 'WINNER') {
+            setWinner(msg.player);
+        }
+        // MODIFICA: Quando arriva il RESET, azzeriamo anche il vincitore visualizzato nell'admin.
+        if (msg.type === 'RESET') {
+            setWinner(null);
+        }
     });
 
     // MODIFICA: Quando l'admin è autenticato sul client (isAdmin === true),
@@ -90,6 +101,10 @@ function Admin() {
             >
                 RESET QUIZ
             </button>
+
+            {/* MODIFICA: Mostriamo il vincitore del Buzz anche nel pannello admin.
+                Il messaggio scompare quando l'admin preme RESET QUIZ. */}
+            {winner && <h2>🏆 Primo a premere: {winner}</h2>}
 
             <hr />
 
