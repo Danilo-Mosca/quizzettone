@@ -5,10 +5,13 @@ import { WebSocketServer, WebSocket } from 'ws';
 const wss = new WebSocketServer({ port: 3000 });
 
 /**
- * 🔐 PASSWORD ADMIN (per ora hardcoded)
- * In futuro verrà spostata in una variabile d’ambiente (.env)
+ * 🔐 PASSWORD ADMIN (da .env)
  */
-const ADMIN_PASSWORD = 'quiz123'; // ⚠️ poi la sposteremo in .env
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+if (!ADMIN_PASSWORD) {
+    console.error('❌ ERRORE: ADMIN_PASSWORD non definita. Creare un file .env con ADMIN_PASSWORD=...');
+    process.exit(1);
+}
 
 /**
  * Stato del quiz
@@ -23,6 +26,11 @@ const connectedPlayers = new Map();     // valore persistente finché il server 
 // 🧠 Player registrati (UUID → nome)
 const registeredPlayers = new Map();    // valore persistente finché il server è acceso (UUID → nome (identità))
 /*********** QUINDI ORA L'IDENTITA' COMPLETA SARA': UUID + playerName ***********/
+
+/**
+ * 🏆 Punteggi classifica (UUID → numero)
+ */
+const scores = new Map();
 
 /**
  * Evento scatenato OGNI VOLTA che un client si connette
@@ -58,6 +66,7 @@ wss.on('connection', (ws) => {
                 // all'admin appena autenticato, in modo che l'interfaccia si allinei subito
                 // anche in caso di login iniziale o di refresh della pagina.
                 broadcastPlayers();
+                broadcastScores();
             } else {
                 ws.send(JSON.stringify({
                     type: 'ADMIN_DENIED'
@@ -129,6 +138,10 @@ wss.on('connection', (ws) => {
             // MODIFICA: registeredPlayers ora salva un oggetto { name, canBuzz } al posto della sola stringa del nome.
             // canBuzz parte sempre a false: il player è bloccato finché l'admin non lo sblocca esplicitamente.
             registeredPlayers.set(playerId, { name: playerName, canBuzz: false });
+            // 🏆 Punteggio iniziale per la classifica
+            if (!scores.has(playerId)) {
+                scores.set(playerId, 0);
+            }
             // Creo una chiave dinamica "playerId" a cui associerò l'UUID salvato nel localStorage del client del giocatore:
             ws.playerId = playerId;    // Oppure andava bene anche: ws.playerId = data.playerId;
             // Creo una chiave dinamica "playerName" dell'oggetto ws per poterci salvare il nome del client appena connesso:
@@ -225,7 +238,9 @@ wss.on('connection', (ws) => {
 
             connectedPlayers.delete(playerId);
             registeredPlayers.delete(playerId);
+            scores.delete(playerId);
             broadcastPlayers();
+            broadcastScores();
         }
 
         /**
@@ -270,6 +285,43 @@ wss.on('connection', (ws) => {
             // I player riceveranno il messaggio RESET e azzeranno la variabile di stato "winner",
             // rendendo il pulsante BUZZ di nuovo visibile/premibile (se abilitato).
             broadcast({ type: 'RESET' });
+        }
+
+        /**
+         * 🏆 ADMIN → aggiusta punteggio classifica
+         */
+        if (data.type === 'ADMIN_ADJUST_SCORE') {
+            if (ws.role !== 'admin') return;
+
+            const { playerId, delta } = data;
+            const current = scores.get(playerId);
+            if (current === undefined) return;
+
+            scores.set(playerId, current + delta);
+            broadcastScores();
+        }
+
+        /**
+         * 🏆 ADMIN → rimuove un giocatore dalla classifica
+         */
+        if (data.type === 'ADMIN_REMOVE_SCORE') {
+            if (ws.role !== 'admin') return;
+
+            scores.delete(data.playerId);
+            broadcastScores();
+        }
+
+        /**
+         * 🏆 ADMIN → resetta tutti i punteggi
+         */
+        if (data.type === 'ADMIN_RESET_SCORES') {
+            if (ws.role !== 'admin') return;
+
+            for (const id of scores.keys()) {
+                scores.set(id, 0);
+            }
+            broadcastScores();
+            console.log('🏆 Classifica resettata dall\'admin');
         }
     });
 
@@ -343,6 +395,27 @@ function broadcastPlayers() {
     broadcast({
         type: 'PLAYERS_UPDATE',
         players
+    });
+}
+
+/**
+ * 🏆 Invia la classifica dei punteggi a TUTTI i client
+ */
+function broadcastScores() {
+    const scoreList = Array.from(scores.entries()).map(
+        ([id, score]) => {
+            const player = registeredPlayers.get(id);
+            return {
+                id,
+                name: player ? player.name : 'Sconosciuto',
+                score
+            };
+        }
+    );
+
+    broadcast({
+        type: 'SCORES_UPDATE',
+        scores: scoreList
     });
 }
 

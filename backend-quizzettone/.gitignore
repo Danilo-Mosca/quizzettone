@@ -1,3 +1,4 @@
 # Escludo i node modules e il package-lock.json da GitHub:
 node_modules/
 package-lock.json
+.env

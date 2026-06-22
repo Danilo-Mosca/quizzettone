@@ -26,6 +26,8 @@ function Admin() {
     const [players, setPlayers] = useState([]);
     // MODIFICA: Stato per mostrare nell'admin chi ha premuto il Buzz per primo, proprio come nella pagina del player.
     const [winner, setWinner] = useState(null);
+    // 🏆 Classifica punteggi
+    const [scores, setScores] = useState([]);
 
     /* SPIEGAZIONE DEL CODICE DI SEGUITO E DELLA CHIAMATA A useQuizSocket():
      * Quando entro come admin non vedrò mai il console.log('MSG: ', msg);
@@ -69,6 +71,10 @@ function Admin() {
         // MODIFICA: Quando arriva il RESET, azzeriamo anche il vincitore visualizzato nell'admin.
         if (msg.type === 'RESET') {
             setWinner(null);
+        }
+        // 🏆 Aggiornamento classifica
+        if (msg.type === 'SCORES_UPDATE') {
+            setScores(msg.scores);
         }
     });
 
@@ -204,6 +210,71 @@ function Admin() {
                         </table>
                     )
             }
+
+            {/* 🏆 CLASSIFICA */}
+            <h2>🏆 Classifica</h2>
+
+            {
+                scores.length === 0
+                    ? <p>Nessun punteggio</p>
+                    : (
+                        <table
+                            border="1"
+                            cellPadding="10"
+                            style={{
+                                borderCollapse: 'collapse',
+                                marginTop: '0.5rem'
+                            }}
+                        >
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Nome</th>
+                                    <th>Punteggio</th>
+                                    <th>Azioni</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {[...scores]
+                                    .sort((a, b) => b.score - a.score)
+                                    .map((entry, i) => (
+                                        <tr key={entry.id}>
+                                            <td>{i + 1}</td>
+                                            <td>{entry.name}</td>
+                                            <td>{entry.score}</td>
+                                            <td>
+                                                <button
+                                                    onClick={() => socket.adjustScore(entry.id, -1)}
+                                                >
+                                                    −
+                                                </button>
+                                                {' '}
+                                                <button
+                                                    onClick={() => socket.adjustScore(entry.id, 1)}
+                                                >
+                                                    +
+                                                </button>
+                                                {' '}
+                                                <button
+                                                    onClick={() => socket.removeScore(entry.id)}
+                                                >
+                                                    🗑️
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                }
+                            </tbody>
+                        </table>
+                    )
+            }
+
+            <button
+                onClick={socket.resetScores}
+                style={{ marginTop: '0.5rem' }}
+            >
+                Resetta Classifica
+            </button>
 
             <hr />
 

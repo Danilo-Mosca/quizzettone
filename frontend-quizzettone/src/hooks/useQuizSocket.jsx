@@ -152,6 +152,27 @@ export function useQuizSocket(role, onMessage) {
         safeSend({ type: 'PLAYER_UNREGISTER' });
     }
 
+    /**
+     * 🏆 ADMIN → incrementa/decrementa punteggio
+     */
+    function adjustScore(playerId, delta) {
+        safeSend({ type: 'ADMIN_ADJUST_SCORE', playerId, delta });
+    }
+
+    /**
+     * 🏆 ADMIN → rimuove un giocatore dalla classifica
+     */
+    function removeScore(playerId) {
+        safeSend({ type: 'ADMIN_REMOVE_SCORE', playerId });
+    }
+
+    /**
+     * 🏆 ADMIN → resetta tutti i punteggi
+     */
+    function resetScores() {
+        safeSend({ type: 'ADMIN_RESET_SCORES' });
+    }
+
     // Ritorna solo le funzioni per interagire con il server
     return {
         sendWelcome,
@@ -161,6 +182,9 @@ export function useQuizSocket(role, onMessage) {
         forceResetPlayer,
         sendAdminLogin, // MODIFICA: Esportiamo la funzione di login admin per essere usata nel componente Admin
         selfUnregister, // MODIFICA: Esportiamo la funzione di auto-deregistrazione per il player
+        adjustScore,
+        removeScore,
+        resetScores,
         safeSend
     };
 }
