@@ -1,0 +1,518 @@
+/* ============================================
+   Quizzettone — Game UI Design System
+   ============================================ */
+
+/* ───────────── Layout ───────────── */
+
+.page {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.page--admin {
+  justify-content: flex-start;
+  padding-top: 2rem;
+}
+
+.card {
+  background: var(--color-card);
+  border: 1px solid var(--color-card-border);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: var(--shadow-lg);
+}
+
+.card--wide {
+  max-width: 720px;
+}
+
+.card__title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 0.25rem;
+}
+
+.card__subtitle {
+  color: var(--color-text-secondary);
+  text-align: center;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+}
+
+/* ───────────── Game header logo ───────────── */
+
+.game-logo {
+  font-size: 2rem;
+  font-weight: 800;
+  text-align: center;
+  margin-bottom: 1.5rem;
+  background: linear-gradient(135deg, var(--color-primary), #a78bfa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.02em;
+}
+
+/* ───────────── Input ───────────── */
+
+.input {
+  width: 100%;
+  padding: 0.875rem 1.25rem;
+  background: var(--color-surface);
+  border: 2px solid transparent;
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-glow);
+  background: var(--color-surface-hover);
+}
+
+.input::placeholder {
+  color: var(--color-text-muted);
+}
+
+/* ───────────── Buttons ───────────── */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn--primary {
+  background: linear-gradient(135deg, var(--color-primary), #6a48e8);
+  color: white;
+  box-shadow: 0 4px 14px var(--color-primary-glow);
+}
+
+.btn--primary:hover:not(:disabled) {
+  box-shadow: 0 6px 20px var(--color-primary-glow);
+}
+
+.btn--full {
+  width: 100%;
+}
+
+.btn--sm {
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  border-radius: var(--radius-sm);
+}
+
+.btn--ghost {
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+}
+
+.btn--ghost:hover:not(:disabled) {
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+}
+
+.btn--danger {
+  background: var(--color-error-bg);
+  color: var(--color-error);
+}
+
+.btn--danger:hover:not(:disabled) {
+  background: rgba(255, 107, 107, 0.25);
+}
+
+.btn--success {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+.btn--success:hover:not(:disabled) {
+  background: rgba(0, 200, 150, 0.25);
+}
+
+.btn--icon {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: var(--radius-full);
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+/* ───────────── Buzz Button ───────────── */
+
+.buzz-btn {
+  width: 180px;
+  height: 180px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(145deg, var(--color-buzz), #e84142);
+  color: white;
+  font-size: 2.5rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  box-shadow: 0 8px 32px var(--color-buzz-glow), inset 0 -4px 12px rgba(0, 0, 0, 0.3);
+  transition: all 0.15s ease;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  position: relative;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.buzz-btn:hover:not(:disabled) {
+  transform: scale(1.05);
+  box-shadow: 0 10px 40px var(--color-buzz-glow), inset 0 -4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.buzz-btn:active:not(:disabled) {
+  transform: scale(0.97);
+  box-shadow: 0 4px 16px var(--color-buzz-glow), inset 0 -4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.buzz-btn:disabled {
+  background: linear-gradient(145deg, #444, #555);
+  box-shadow: none;
+  text-shadow: none;
+}
+
+.buzz-btn--pulse {
+  animation: buzzPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes buzzPulse {
+  0%, 100% {
+    box-shadow: 0 8px 32px var(--color-buzz-glow), inset 0 -4px 12px rgba(0, 0, 0, 0.3);
+  }
+  50% {
+    box-shadow: 0 8px 48px var(--color-buzz-glow), 0 0 64px var(--color-buzz-glow), inset 0 -4px 12px rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* ───────────── Winner announcement ───────────── */
+
+.winner-banner {
+  margin-top: 1.5rem;
+  padding: 1rem 2rem;
+  background: linear-gradient(135deg, var(--color-warning-bg), rgba(255, 217, 61, 0.25));
+  border: 1px solid rgba(255, 217, 61, 0.3);
+  border-radius: var(--radius-md);
+  text-align: center;
+  animation: winnerPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.winner-banner__label {
+  font-size: 0.8rem;
+  color: var(--color-warning);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+}
+
+.winner-banner__name {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--color-warning);
+  margin-top: 0.15rem;
+}
+
+@keyframes winnerPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ───────────── Player list ───────────── */
+
+.player-list {
+  margin-top: 2rem;
+  width: 100%;
+  max-width: 420px;
+}
+
+.player-list__header {
+  color: var(--color-text-secondary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.player-list__item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: 0.95rem;
+}
+
+.player-list__item:last-child {
+  border-bottom: none;
+}
+
+.player-list__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--color-success);
+  flex-shrink: 0;
+}
+
+/* ───────────── Admin login ───────────── */
+
+.admin-login__error {
+  margin-top: 0.75rem;
+  padding: 0.5rem 1rem;
+  background: var(--color-error-bg);
+  color: var(--color-error);
+  border-radius: var(--radius-sm);
+  text-align: center;
+  font-size: 0.85rem;
+  animation: shake 0.4s ease;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+
+/* ───────────── Admin dashboard ───────────── */
+
+.admin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 900px;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.admin-header__title {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.admin-header__actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.admin-content {
+  width: 100%;
+  max-width: 900px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.admin-section {
+  background: var(--color-card);
+  border: 1px solid var(--color-card-border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-md);
+}
+
+.admin-section__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.admin-section__title {
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+/* ───────────── Tables ───────────── */
+
+.table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th {
+  text-align: left;
+  padding: 0.75rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+  border-bottom: 1px solid var(--color-surface);
+}
+
+td {
+  padding: 0.7rem 0.75rem;
+  font-size: 0.9rem;
+  border-bottom: 1px solid var(--color-surface);
+  vertical-align: middle;
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
+
+tr:hover td {
+  background: var(--color-surface);
+}
+
+/* ───────────── Badges ───────────── */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.badge--success {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+.badge--error {
+  background: var(--color-error-bg);
+  color: var(--color-error);
+}
+
+/* ───────────── Score / ranking ───────────── */
+
+.score-display {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-warning);
+  font-variant-numeric: tabular-nums;
+}
+
+.score-actions {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.rank-number {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+}
+
+.rank-number--top {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+}
+
+/* ───────────── Empty state ───────────── */
+
+.empty-state {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--color-text-muted);
+}
+
+.empty-state__icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.5;
+}
+
+.empty-state__text {
+  font-size: 0.9rem;
+}
+
+/* ───────────── Responsive ───────────── */
+
+@media (max-width: 600px) {
+  .card {
+    padding: 1.5rem;
+    border-radius: var(--radius-md);
+  }
+
+  .buzz-btn {
+    width: 140px;
+    height: 140px;
+    font-size: 2rem;
+  }
+
+  .winner-banner__name {
+    font-size: 1.4rem;
+  }
+
+  .admin-section {
+    padding: 1rem;
+  }
+
+  .admin-header__title {
+    font-size: 1.2rem;
+  }
+
+  th, td {
+    padding: 0.5rem 0.5rem;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .buzz-btn {
+    width: 120px;
+    height: 120px;
+    font-size: 1.6rem;
+  }
+
+  .page {
+    padding: 0.75rem;
+  }
+}

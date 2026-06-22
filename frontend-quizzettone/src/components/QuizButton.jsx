@@ -1,159 +1,157 @@
 import { useState, useEffect } from 'react';
-import { useQuizSocket } from '../hooks/useQuizSocket.jsx';         // Usando il percorso relativo
-// import { useQuizSocket } from '/src/hooks/useQuizSocket.jsx';    // Usando il percorso assoluto che in realtà non è il vero percorso assoluto JavaScript ma è una convenzione di Vite
-import { getOrCreatedPlayerId, getPlayerName, setPlayerName, resetPlayerId } from '../utils/playerIdentity.js';         // Importo la funzione resetPlayerId() dal file "playerIdentity.js"
+import { useQuizSocket } from '../hooks/useQuizSocket.jsx';
+import { getOrCreatedPlayerId, getPlayerName, setPlayerName, resetPlayerId } from '../utils/playerIdentity.js';
 
 export default function QuizButton() {
-    // Recupero UUID e nome salvati nel localStorage
-    const playerId = getOrCreatedPlayerId();      // UUID unico per questo giocatore
-    const savedName = getPlayerName();            // Legge il nome salvato nel localStorage (se presente)
+    const playerId = getOrCreatedPlayerId();
+    const savedName = getPlayerName();
 
-    // Stato del componente
-    const [playerName, setPlayerNameState] = useState(savedName || '');  // Nome del giocatore
-    const [joined, setJoined] = useState(!!savedName);              // true se il player ha completato l'iscrizione
-    const [connecting, setConnecting] = useState(false);            // true se stiamo aspettando risposta dal server
-    const [winner, setWinner] = useState(null);                     // Primo giocatore che ha premuto BUZZ. Variabile di stato che controlla chi ha premuto per primo il pulsante
-    const [error, setError] = useState(null);                       // Messaggi di errore (es. nome già preso)
-    const [players, setPlayers] = useState([]);                     // Lista dei giocatori connessi
-    const [canBuzz, setCanBuzz] = useState(false);                  // Stato server per abilitare/disabilitare il pulsante BUZZ
+    const [playerName, setPlayerNameState] = useState(savedName || '');
+    const [joined, setJoined] = useState(!!savedName);
+    const [connecting, setConnecting] = useState(false);
+    const [winner, setWinner] = useState(null);
+    const [error, setError] = useState(null);
+    const [players, setPlayers] = useState([]);
+    const [canBuzz, setCanBuzz] = useState(false);
 
-
-    /** Inizializziamo la socket WebSocket */
     const { sendWelcome, buzz, selfUnregister } = useQuizSocket('player', (msg) => {
-        // Se il nome è stato preso, ovvero quando il type del messaggio è === 'NAME_OK': SERVER → NAME_OK
         if (msg.type === 'NAME_OK') {
-            setJoined(true);    // Setto la variabile di stato "setJoined" a true. Il player è ufficialmente registrato
-            setError(null);     // Setto la variabile di stato "setError" a null
+            setJoined(true);
+            setError(null);
             setConnecting(false);
-
-            // Salva sempre il nome nel localStorage, anche in caso di reconnect
             setPlayerName(playerName || msg.playerName);
         }
 
-        // ❌ Nome già preso
-        // Se il nome è già presente e quindi non è stato preso, ovvero quando il type del messaggio è === 'NAME_TAKEN': SERVER → NAME_TAKEN
         if (msg.type === 'NAME_TAKEN') {
-            setError(msg.message);  // Setto la variabile di stato "setError" con la stringa ricevuta dal server: "Nome giocatore già presente, scegline un altro!"
+            setError(msg.message);
             setJoined(false);
             setConnecting(false);
         }
 
-        // Se il server annuncia il vincitore: SERVER → WINNER
         if (msg.type === 'WINNER') {
             setWinner(msg.player);
-            // MODIFICA: Rimosso il setTimeout() provvisorio che azzerava il vincitore dopo 5 secondi.
-            // Ora il reset del vincitore avviene correttamente quando l'admin preme "RESET QUIZ",
-            // che invia { type: 'RESET' } e viene gestito dal blocco sottostante.
         }
 
-        // Reset del quiz generico: SERVER → RESET
         if (msg.type === 'RESET') {
             setWinner(null);
         }
 
-        // Aggiornamento lista giocatori dal server: SERVER → PLAYERS_UPDATE, include stato canBuzz
         if (msg.type === 'PLAYERS_UPDATE') {
-            // MODIFICA: Identifichiamo il giocatore corrente confrontando l'ID unico (playerId)
-            // anziché il nome. Questo è molto più robusto ed evita disallineamenti o bug
-            // qualora il nome non sia inserito o contenga spazi extra.
             const me = msg.players.find(p => p.id === playerId);
             if (me) {
-                setCanBuzz(me.canBuzz); // abilita/disabilita pulsante in base al server
+                setCanBuzz(me.canBuzz);
             }
-            
-            // Lista dei player solo per mostrare i nomi
             setPlayers(msg.players.map(p => p.name));
         }
 
-        // 🧨 Admin forza reset del player → cancella localStorage + reload
         if (msg.type === 'FORCE_RESET') {
-            resetPlayerId();           // Rimuove UUID + nome
-            window.location.reload();  // Ricarica pagina
+            resetPlayerId();
+            window.location.reload();
         }
     });
 
-    // useEffect automatico: se abbiamo già un nome salvato → invio HELLO al server automaticamente
     useEffect(() => {
         if (savedName) {
-            setConnecting(true);          // Mostriamo "Connessione in corso..."
-            sendWelcome(savedName);       // Invia HELLO al server
+            setConnecting(true);
+            sendWelcome(savedName);
         }
-    }, []); // eseguito solo al montaggio
+    }, []);
 
-    // Funzione che gestisce il reset del nome del giocatore
     function handleResetIdentity() {
-        // Il metodo confirm() è una funzione integrata di JavaScript che serve a mostare una finestra di dialogo modale al browser per chiedere
-        // conferma all'utente. confirm() visualizza un messaggio con due pulsanti: "Ok", "Annulla" e restituisce un valore booleano in base alla scelta
-        // dell'utente
         const confirmReset = confirm('Sei sicuro di voler entrare come nuovo player?');
         if (confirmReset) {
-            // MODIFICA: Prima di cancellare il localStorage, notifichiamo il server di rimuovere
-            // questa identità da registeredPlayers. Senza questo passaggio, il server manteneva
-            // il vecchio nome registrato e il player non poteva rientrare con lo stesso nome.
             selfUnregister();
-            // Richiamo la funzione resetPlayerId() dal file "playerIdentity.js" che eliminerà l'UUID dal localStorage del client (giocatore) che lo ha richiesto
-            resetPlayerId();            // Rimuove UUID
-            window.location.reload();   // Refresho la pagina per potergli assegnare un nuovo nome, un nuovo UUID e così una nuova identità
+            resetPlayerId();
+            window.location.reload();
         }
     }
 
-    // Se il giocatore non è ancora entrato, mostra form di inserimento nome
     if (!joined) {
         if (connecting) {
-            return <p>⏳ Connessione in corso...</p>;
+            return (
+                <div className="page">
+                    <p style={{ color: 'var(--color-text-secondary)' }}>⏳ Connessione in corso...</p>
+                </div>
+            );
         }
         return (
-            <>
-                <input
-                    value={playerName}
-                    onChange={(e) => setPlayerNameState(e.target.value)}
-                    placeholder="Inserisci il tuo nome"
-                />
-                <button
-                    disabled={!playerName}   // Disabilita se input vuoto
-                    onClick={() => {
-                        setConnecting(true);                 // Mostriamo stato "connessione"
-                        sendWelcome(playerName);             // Invio messaggio HELLO al server
-                    }}
-                >
-                    Entra nel quiz
-                </button>
+            <div className="page">
+                <div className="card">
+                    <div className="game-logo">Quizzettone</div>
+                    <p className="card__subtitle">Inserisci il tuo nome per entrare</p>
 
-                {error && <p style={{ color: 'red' }}>{error}</p>}
-            </>
+                    <input
+                        className="input"
+                        value={playerName}
+                        onChange={(e) => setPlayerNameState(e.target.value)}
+                        placeholder="Il tuo nome"
+                    />
+
+                    <div style={{ marginTop: '0.75rem' }}>
+                        <button
+                            className="btn btn--primary btn--full"
+                            disabled={!playerName}
+                            onClick={() => {
+                                setConnecting(true);
+                                sendWelcome(playerName);
+                            }}
+                        >
+                            Entra nel quiz
+                        </button>
+                    </div>
+
+                    {error && <div className="admin-login__error">{error}</div>}
+                </div>
+            </div>
         );
     }
 
-    // 🔹 Player registrato → mostra pulsante BUZZ + lista giocatori
     return (
-        <>
+        <div className="page">
+            <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <div className="game-logo">Quizzettone</div>
+
+                <button
+                    className={`buzz-btn ${canBuzz && !winner ? 'buzz-btn--pulse' : ''}`}
+                    onMouseDown={buzz}
+                    disabled={!canBuzz || winner}
+                >
+                    BUZZ!
+                </button>
+
+                {winner && (
+                    <div className="winner-banner">
+                        <div className="winner-banner__label">Primo a premere</div>
+                        <div className="winner-banner__name">{winner}</div>
+                    </div>
+                )}
+            </div>
+
+            <div className="player-list">
+                <div className="player-list__header">
+                    👥 Giocatori ({players.length})
+                </div>
+                {players.length === 0 ? (
+                    <div className="player-list__item" style={{ border: 'none', color: 'var(--color-text-muted)' }}>
+                        Nessun giocatore connesso
+                    </div>
+                ) : (
+                    players.map((p, i) => (
+                        <div key={i} className="player-list__item">
+                            <span className="player-list__dot" />
+                            {p}
+                        </div>
+                    ))
+                )}
+            </div>
+
             <button
-                onMouseDown={buzz}  // onMouseDown più veloce di onClick
-                disabled={!canBuzz || winner}  // Disabilitato se il server lo blocca o se c'è già un vincitore
-                style={{
-                    fontSize: '3rem',
-                    padding: '2rem',
-                    background: 'red',
-                    color: 'white'
-                }}
+                className="btn btn--ghost"
+                style={{ marginTop: '1rem' }}
+                onClick={handleResetIdentity}
             >
-                BUZZ!
+                🔄 Entra come nuovo giocatore
             </button>
-
-            {winner && <h2>🏆 Primo: {winner}</h2>}
-
-            {/* Lista giocatori connessi */}
-            <h3>👥 Giocatori connessi ({players.length})</h3>
-            <ul>
-                {players.map((p, i) => (
-                    <li key={i}>{p}</li>
-                ))}
-            </ul>
-
-            {/* Bottone per entrare come nuovo giocatore */}
-            <button onClick={handleResetIdentity}>
-                Entra come nuovo giocatore
-            </button>
-        </>
+        </div>
     );
 }

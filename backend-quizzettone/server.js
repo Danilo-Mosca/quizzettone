@@ -114,6 +114,7 @@ wss.on('connection', (ws) => {
 
                 // 🔴 STEP 3 → aggiorniamo lista giocatori
                 broadcastPlayers();
+                broadcastScores();
                 return;
             }
 
@@ -162,6 +163,7 @@ wss.on('connection', (ws) => {
 
             // 🔴 STEP 3 → aggiorniamo lista giocatori
             broadcastPlayers();
+            broadcastScores();
             return;
         }
 
@@ -256,7 +258,9 @@ wss.on('connection', (ws) => {
                 // Rimuoviamo il player sia dalla lista delle connessioni attive che dalle identità registrate
                 connectedPlayers.delete(ws.playerId);
                 registeredPlayers.delete(ws.playerId);
+                scores.delete(ws.playerId);
                 broadcastPlayers();
+                broadcastScores();
                 console.log(`🗑️ Player "${ws.playerName}" si è auto-deregistrato`);
             }
         }
