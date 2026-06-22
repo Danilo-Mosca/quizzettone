@@ -10,8 +10,8 @@ export function useQuizSocket(role, onMessage) {
 
     // useEffect eseguito solo al montaggio del componente
     useEffect(() => {
-        // Creiamo la connessione WebSocket
-        const ws = new WebSocket('ws://192.168.1.86:3000');    // Crea la connessione al server WebSocket
+        // Creiamo la connessione WebSocket. window.location.hostname è una proprietà di JavaScript che ti restituisce il nome del dominio (host) della pagina web corrente. Serve a connettersi da reti differenti, nel test ho usato il classico ip dinamico ws://192.168.1.86:3000 ovvero nel mio ambiente di sviluppo locale.
+        const ws = new WebSocket(`ws://${window.location.hostname}:3000`);    // Crea la connessione al server WebSocket
         socketRef.current = ws;         // Salva la socket in socketRef.current così può essere riutilizzata fuori dall’useEffect.
         // socketRef.current conterrà sempre l’istanza attiva della socket
 

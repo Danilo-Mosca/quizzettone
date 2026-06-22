@@ -23,7 +23,7 @@ No test runner exists. No CI/CD.
 
 ## Network setup
 
-- Backend hardcodes `ws://192.168.1.86:3000` in both `server.js:349` and `useQuizSocket.jsx:14`.
+- Backend server on port 3000. Frontend connects via `ws://${window.location.hostname}:3000` — works on any network without hardcoded IP.
 - Frontend dev: use `npm run dev -- --host` (or set `server.host: true` in `vite.config.js`) for LAN access.
 - Admin password loaded from `backend-quizzettone/.env` via `ADMIN_PASSWORD`. Copy `.env.example` to `.env` to configure. Both local and WebSocket auth use the same env variable.
 - Client-side `useAdminAuth` hardcodes password `quiz123` as fallback — must match the `.env` value.

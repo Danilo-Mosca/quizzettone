@@ -423,4 +423,4 @@ function broadcastScores() {
     });
 }
 
-console.log('🚀 Quiz server WebSocket su ws://192.168.1.86:3000');  //L'IP del mio pc per potervi accedere nella mia rete locale
+console.log(`🚀 Quiz server WebSocket in ascolto su ${window.location.hostname} sulla porta 3000`);
