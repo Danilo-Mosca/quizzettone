@@ -423,4 +423,4 @@ function broadcastScores() {
     });
 }
 
-console.log(`🚀 Quiz server WebSocket in ascolto su ${window.location.hostname} sulla porta 3000`);
+console.log(`🚀 Quiz server WebSocket in ascolto sulla porta 3000`);
