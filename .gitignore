@@ -1,0 +1,3 @@
+# Escludo da GitHub i file della root principale (quella estarna alle cartelle "backend-quizzettone" e "frontend-quizzettone") che non mi servono
+AGENTS.md
+implementation_plan.md
