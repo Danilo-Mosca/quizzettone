@@ -57,6 +57,28 @@ export default function QuizButton() {
         }
     }, []);
 
+    /**
+     * 🖱️📱 Handler unificato per BUZZ (mouse + touch).
+     * 
+     * Su desktop, onMouseDown è più veloce di onClick (~50ms di vantaggio).
+     * Su mobile, il browser NON genera mousedown immediato: prima scatta
+     * touchstart, poi attende ~300ms per eventuale doppio-tap (zoom) e solo
+     * dopo sintetizza un mousedown ritardato.
+     * 
+     * La soluzione: gestire subito touchstart con preventDefault() per
+     * bloccare la generazione dell'evento mouse sintetico ritardato.
+     * In questo modo sia mouse che touch partono con la massima reattività.
+     * 
+     * @param {React.MouseEvent | React.TouchEvent} e - Evento nativo
+     */
+    function handleBuzz(e) {
+        // Su mobile (touchstart), impediamo al browser di generare
+        // un successivo mousedown fittizio con latenza da doppio-tap.
+        // Su desktop preventDefault non ha effetti negativi su mousedown.
+        e.preventDefault();
+        buzz();
+    }
+
     function handleResetIdentity() {
         const confirmReset = confirm('Sei sicuro di voler entrare come nuovo player?');
         if (confirmReset) {
@@ -113,7 +135,8 @@ export default function QuizButton() {
 
                 <button
                     className={`buzz-btn ${canBuzz && !winner ? 'buzz-btn--pulse' : ''}`}
-                    onMouseDown={buzz}
+                    onMouseDown={handleBuzz}
+                    onTouchStart={handleBuzz}
                     disabled={!canBuzz || winner}
                 >
                     BUZZ!
