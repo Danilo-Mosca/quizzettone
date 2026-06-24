@@ -1,13 +1,17 @@
 # 🧠 Quizzettone
 
-**Quizzettone** è una WepApp
+**Quizzettone** è una web-app per quiz dal vivo che sostituisce la classica pulsantiera fisica con il browser.
 
-Il **backend** realizzato con **Node.js** utilizza i **WebSocket** per comunicare in tempo reale con i client frontend.  
-Il server riceve e invia messaggi ai browser dei partecipanti, gestendo le risposte e gli eventi del quiz in modo immediato.
+Il **backend** (Node.js + WebSocket) gestisce in tempo reale lo stato del quiz e la comunicazione con tutti i dispositivi connessi.  
+Il **frontend** (React + Vite) offre una UI gamificata con due sezioni: pagina giocatore e pannello amministratore.
 
-Il **frontend** realizzato con **React** è costituito da una rotta comune per i **players** e da una rotta "/admin" riservata agli amministratori.
+## 🎯 Scopo dell’applicazione
 
-L’app nasce con l’obiettivo di **sostituire la classica pulsantiera fisica dei quiz**, permettendo ai giocatori di partecipare semplicemente utilizzando il **browser web**.
+**Quizzettone** è pensata per:
+- quiz dal vivo
+- giochi a squadre o individuali
+- contesti educativi o ricreativi
+- eventi in cui non si vogliono usare dispositivi hardware dedicati
 
 ## 🌐 Accessibilità
 
@@ -19,61 +23,74 @@ Quizzettone è utilizzabile senza installare app dedicate ed è compatibile con:
 
 È sufficiente un browser moderno e una connessione alla rete.
 
-## 🚀 Funzionalità principali
+## 🚀 Funzionalità
 
-- 🔌 Comunicazione in tempo reale tramite **WebSocket**
-- 🧑‍🤝‍🧑 Gestione di più client connessi contemporaneamente
-- 🛎️ Invio e ricezione immediata delle risposte
-- 🎮 Simulazione della pulsantiera dei quiz tramite browser
-- 🏆 Gestione della logica di gioco lato server
+- 🔌 Comunicazione in tempo reale tramite WebSocket
+- 🧑‍🤝‍🧑 Gestione di più giocatori contemporaneamente
+- 🛎️ Pulsante BUZZ con feedback immediato
+- 🔐 Pannello admin protetto da password
+- 🎛️ Admin: reset quiz, abilita/blocca buzz per giocatore, reset identità
+- 🏆 **Classifica** con punteggi persistenti (➕/➖ per giocatore, reset globale)
+- 🎨 UI gamificata (gradiente scuro, animazioni, card, responsive mobile-first)
+- 🌐 Funziona su qualsiasi rete LAN senza configurazione IP
 
-## 🎯 Scopo dell’applicazione
+## Struttura del progetto
 
-**Quizzettone** è pensata per:
-- quiz dal vivo
-- giochi a squadre o individuali
-- contesti educativi o ricreativi
-- eventi in cui non si vogliono usare dispositivi hardware dedicati
+```
+quizzettone/
+├── backend-quizzettone/     ← Server WebSocket (Node.js)
+│   ├── .env                 ← Password admin (gitignored)
+│   ├── .env.example         ← Template per .env
+│   ├── server.js            ← Entry point (porta 3000)
+│   └── package.json
+├── frontend-quizzettone/    ← Client React (Vite)
+│   ├── src/
+│   │   ├── main.jsx         ← Entry point
+│   │   ├── App.jsx          ← Routes: / e /admin
+│   │   ├── components/      ← QuizButton, Admin, AdminLogin
+│   │   ├── hooks/           ← useQuizSocket, useAdminAuth
+│   │   └── utils/           ← playerIdentity
+│   └── package.json
+├── AGENTS.md                ← Istruzioni per l'agente AI
+└── implementation_plan.md   ← Documento di design
+```
 
-## 🛠️ Tecnologie utilizzate
+## Requisiti
 
-- **Node.js**
-- **WebSocket**
-- **React** per il Frontend web (ovviamente insieme ad HTML / CSS / JavaScript)
-- Browser come interfaccia utente
+- Node.js 20.6+ (per `--env-file` e `--watch`)
 
 ## 📦 Avvio del progetto
 
-1. Clona il repository:
-   ```bash
-   git clone https://github.com/danilo-mosca/quizzettone.git
-   ```
+```bash
+# 1. Clona la repository:
+git clone https://github.com/danilo-mosca/quizzettone.git
+```
 
-2. Installa le dipendenze (se necessarie):
-   ```bash
-   npm install
-   ```
+```bash
+# 2. Backend: installa dipendenze e avvia
+cd backend-quizzettone
+npm install
+cp .env.example .env          # configura la password admin
+npm run dev                   # server su ws://localhost:3000
 
-4. Avvia il server:
-   ```bash
-   npm run dev
-   ```
-5. Avvia il frontend per permettere l'accesso a tutti i dispositivi della rete locale (per i vari test):
-   ```bash
-   npm run dev -- --host
-   ```
+# 3. Frontend (nuovo terminale)
+cd frontend-quizzettone
+npm install
+npm run dev                   # http://localhost:5173
 
-## ▶️ Utilizzo
+# 4. Per accesso da altri dispositivi sulla stessa rete avviare il frontend con il comando:
+npm run dev -- --host
+```
 
-- Avvia il server **Quizzettone**
-- I partecipanti si collegano tramite **browser**
-- Ogni dispositivo funge da **pulsantiera**
-- Il server gestisce gli **eventi del quiz in tempo reale**
+## Utilizzo
 
-## 📌 Stato del progetto
+1. Apri `http://localhost:5173` — i giocatori inseriscono il nome e premono BUZZ
+2. Apri `http://localhost:5173/admin` — l'amministratore gestisce il quiz
+3. I dispositivi sulla stessa rete usano l'IP del server al posto di `localhost`
 
-Il progetto è in evoluzione e può essere esteso con:
+## Tecnologie
 
-- classifiche
-- statistiche di gioco
-- interfaccia grafica avanzata
+- **Backend:** Node.js, `ws` (WebSocket)
+- **Frontend:** React 19, Vite, react-router-dom v7
+- **Stile:** CSS vanilla con design system custom
+- **Persistenza:** localStorage (identità player, auth admin) / server RAM (stato gioco, punteggi)
