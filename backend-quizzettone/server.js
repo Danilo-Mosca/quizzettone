@@ -271,6 +271,8 @@ wss.on('connection', (ws) => {
 
             connectedPlayers.delete(playerId);
             registeredPlayers.delete(playerId);
+            // 🧹 Rimuove anche da activeSockets per prevenire memory leak
+            activeSockets.delete(playerId);
             scores.delete(playerId);
             broadcastPlayers();
             broadcastScores();
@@ -290,6 +292,8 @@ wss.on('connection', (ws) => {
                 connectedPlayers.delete(ws.playerId);
                 registeredPlayers.delete(ws.playerId);
                 scores.delete(ws.playerId);
+                // 🧹 Rimuove anche da activeSockets per prevenire memory leak
+                activeSockets.delete(ws.playerId);
                 broadcastPlayers();
                 broadcastScores();
                 console.log(`🗑️ Player "${ws.playerName}" si è auto-deregistrato`);
