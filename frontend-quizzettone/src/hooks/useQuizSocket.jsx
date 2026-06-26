@@ -11,7 +11,14 @@ export function useQuizSocket(role, onMessage) {
     // useEffect eseguito solo al montaggio del componente
     useEffect(() => {
         // Creiamo la connessione WebSocket. window.location.hostname è una proprietà di JavaScript che ti restituisce il nome del dominio (host) della pagina web corrente. Serve a connettersi da reti differenti, nel test ho usato il classico ip dinamico ws://192.168.1.86:3000 ovvero nel mio ambiente di sviluppo locale.
-        const ws = new WebSocket(`ws://${window.location.hostname}:3000`);    // Crea la connessione al server WebSocket
+        // RIATTIVARE LA RIGA DI SEGUITO PER I TEST IN LOCALE E COMMENTARE LE DUE RIGHE DOPO MODIFICHE PER IL DEPLOY:
+        // const ws = new WebSocket(`ws://${window.location.hostname}:3000`);    // Crea la connessione al server WebSocket
+
+        // MODIFICHE PER IL DEPLOY: (disattivare le due righe di seguito e riattivare quella di sopra se si vuole far partire l'app in locale per test)
+        // Cosa fa questa modifica: dice al frontend di connettersi allo stesso host da cui è servito (es. quizzettone.onrender.com) con path /ws. nginx intercetterà /ws e lo proxy-passà al backend Node.js.
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
+        
         socketRef.current = ws;         // Salva la socket in socketRef.current così può essere riutilizzata fuori dall’useEffect.
         // socketRef.current conterrà sempre l’istanza attiva della socket
 

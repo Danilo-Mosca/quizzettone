@@ -2,10 +2,12 @@
 AGENTS.md
 implementation_plan.md
 opencode.json
-sessione/
+sessione-IA/
 plans/
 
 # Escludo tutti i file di docker e i vari readme e guide ad esso riferito
 .dockerignore
 docker-compose.yml
 docker/
+deploy/
+analisi/
