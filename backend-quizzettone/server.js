@@ -36,6 +36,19 @@ const registeredPlayers = new Map();    // valore persistente finché il server 
 const scores = new Map();
 
 /**
+ * 🔗 Tiene traccia del WebSocket ATTIVO per ogni player (UUID → ws).
+ * Serve per gestire la race condition al refresh: su server remoti (Render)
+ * il vecchio evento 'close' può arrivare DOPO il nuovo HELLO, cancellando
+ * erroneamente il player da connectedPlayers.
+ * 
+ * In locale il problema non si nota perché la chiusura TCP arriva istantaneamente
+ * (stessa macchina), ma su Render la latenza di rete inverte l'ordine.
+ * 
+ * Vedi anche: on('close') e HELLO caso reconnect.
+ */
+const activeSockets = new Map();
+
+/**
  * Evento scatenato OGNI VOLTA che un client si connette
  * ws rappresenta QUEL giocatore
  */
@@ -92,6 +105,15 @@ wss.on('connection', (ws) => {
                 // Questo permette di ripristinare lo stato del buzzer assegnato dall'admin anche dopo un refresh.
                 const savedData = registeredPlayers.get(playerId);
                 const savedName = savedData.name;
+
+                // 🔗 Se c'era già un WebSocket attivo per questo player (es. da sessione precedente non ancora
+                // chiusa), lo marchiamo come sostituito. Quando la sua chiusura 'close' arriverà, non cancellerà
+                // il player da connectedPlayers perché non sarà più l'activeSocket.
+                if (activeSockets.has(playerId)) {
+                    const oldWs = activeSockets.get(playerId);
+                    oldWs._replacedBy = ws;
+                }
+                activeSockets.set(playerId, ws);
 
                 ws.playerId = playerId;
                 ws.playerName = savedName;
@@ -151,6 +173,12 @@ wss.on('connection', (ws) => {
             // Creo una chiave dinamica "playerName" dell'oggetto ws per poterci salvare il nome del client appena connesso:
             ws.playerName = playerName;  // ✅ memorizziamo il nome sul ws. Andava bene anche: ws.playerName = data.playerName;
             ws.role = role || 'player';    // Creo un'altra chiave dinamica per il ruolo del client: giocatore o admin (conduttore). Andava bene anche: ws.role = data.role
+
+            // 🔗 Registra come activeSocket (sostituisce eventuale vecchia connessione)
+            if (activeSockets.has(playerId)) {
+                activeSockets.get(playerId)._replacedBy = ws;
+            }
+            activeSockets.set(playerId, ws);
 
             // Aggiungo il nuovo nome nell'oggetto di tipo Map() "connectedPlayers":
             // 🔒 Player parte BLOCCATO
@@ -334,17 +362,27 @@ wss.on('connection', (ws) => {
 
     /**
      * Evento: client disconnesso
+     * 
+     * ⚠️ Race condition su server remoti (Render): il vecchio evento 'close'
+     * può arrivare DOPO che il nuovo HELLO ha già riconnesso il player.
+     * Per evitarlo, cancelliamo da connectedPlayers SOLO se questo ws è ancora
+     * l'activeSocket per il player (cioè non è stato sostituito da una nuova
+     * connessione). Vedi HELLO caso reconnect per il flag _replacedBy.
      */
     ws.on('close', () => {
-        // Alla disconnessione del browser/client se è presente un'istanza dell'oggetto ws (WebSocket) con quell'id, allora cancello il relativo nome_giocatore e id_giocatore salvato in "connectedPlayers":
         if (ws.playerId) {
-            connectedPlayers.delete(ws.playerId);
-            // 👉 Questo evita: nomi bloccati per sempre, zombie players
-
-            // 🔴 STEP 3 → aggiorniamo lista giocatori
-            broadcastPlayers();
+            // Se questo ws è stato sostituito da una nuova connessione, non
+            // cancelliamo il player da connectedPlayers — lo farà la nuova ws
+            // quando si chiuderà (o l'admin manualmente).
+            if (!ws._replacedBy) {
+                connectedPlayers.delete(ws.playerId);
+                broadcastPlayers();
+            }
+            // Se il vecchio ws è ancora registrato come activeSocket, rimuoviamolo
+            if (activeSockets.get(ws.playerId) === ws) {
+                activeSockets.delete(ws.playerId);
+            }
         }
-        // console.log('🔴 Giocatore disconnesso');
         const name = ws.playerName || 'Sconosciuto';
         const role = ws.role || 'Ruolo sconosciuto';
         console.log(`🔴 ${role} "${name}" disconnesso`);
