@@ -2,9 +2,9 @@
 import { WebSocketServer, WebSocket } from 'ws';
 
 // Creiamo un server WebSocket che ascolta sulla porta 3000
-// Prima del deploy:
+// Prima del deploy per il locale:
 // const wss = new WebSocketServer({ port: 3000 });
-// Dopo il deploy su Render.com:
+// Dopo il deploy visibile su Render.com:
 const wss = new WebSocketServer({ host: '127.0.0.1', port: 3000 });
 
 /**
