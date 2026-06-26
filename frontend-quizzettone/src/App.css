@@ -4,6 +4,12 @@
 
 /* ───────────── Layout ───────────── */
 
+.app-layout {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
 .page {
   flex: 1;
   display: flex;
@@ -11,8 +17,6 @@
   align-items: center;
   justify-content: center;
   padding: 1rem;
-  min-height: 100vh;
-  min-height: 100dvh;
 }
 
 .page--admin {
@@ -473,6 +477,54 @@ tr:hover td {
   font-size: 0.9rem;
 }
 
+/* ───────────── Footer ───────────── */
+
+.footer {
+  background: #08051a;
+  border-top: 1px solid rgba(124, 92, 252, 0.15);
+  padding: 1rem;
+  flex-shrink: 0;
+  position: relative;
+  text-align: center;
+}
+
+.footer::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--color-primary), transparent);
+  border-radius: 1px;
+  opacity: 0.7;
+}
+
+.footer__content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.footer__copyright {
+  color: var(--color-text-secondary);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.footer__separator {
+  color: var(--color-primary);
+  font-size: 0.65rem;
+  opacity: 0.6;
+}
+
+.footer__rights {
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+}
+
 /* ───────────── Responsive ───────────── */
 
 @media (max-width: 600px) {
@@ -502,6 +554,20 @@ tr:hover td {
   th, td {
     padding: 0.5rem 0.5rem;
     font-size: 0.8rem;
+  }
+
+  .footer {
+    padding: 0.875rem 0.75rem;
+  }
+
+  .footer__copyright,
+  .footer__rights {
+    font-size: 0.75rem;
+  }
+
+  .footer::before {
+    left: 5%;
+    right: 5%;
   }
 }
 
