@@ -19,6 +19,11 @@ export default function QuizButton() {
             setJoined(true);
             setError(null);
             setConnecting(false);
+            // NOTA: Non salviamo più il nome in localStorage qui (setPlayerName rimosso).
+            // Il nome viene salvato al click "Entra nel quiz", PRIMA di sendWelcome.
+            // Questo evita che una closure stale (playerName === '' nella prima render)
+            // salvi la stringa "undefined" in localStorage (playerName || undefined → undefined).
+            // Vedi onClick() di "Entra nel quiz" per il salvataggio corretto.
         }
 
         if (msg.type === 'NAME_TAKEN') {
@@ -114,6 +119,15 @@ export default function QuizButton() {
                             disabled={!playerName}
                             onClick={() => {
                                 setConnecting(true);
+                                // Salva il nome in localStorage SUBITO, PRIMA di sendWelcome.
+                                // Questo è fondamentale perché il callback onMessage in
+                                // useQuizSocket ha una closure stale (dipendenze []) e
+                                // leggerebbe playerName === '' dalla prima render,
+                                // causando localStorage.setItem('quiz_player_name', undefined)
+                                // che salva la STRINGA "undefined" in localStorage.
+                                // Al refresh, getPlayerName() restituirebbe "undefined",
+                                // il HELLO avrebbe playerName: undefined, e il server
+                                // non riconoscerebbe il player.
                                 setPlayerName(playerName);
                                 sendWelcome(playerName);
                             }}

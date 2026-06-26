@@ -10,3 +10,4 @@ plans/
 docker-compose.yml
 deploy/
 analisi/
+.playwright-mcp/
