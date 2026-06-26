@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: quizzettone
+    env: docker
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: ADMIN_PASSWORD
+        sync: false
+    healthCheckPath: /
+# type: web	Dice a Render che è un web service (non un cron job o worker)
+# name: quizzettone	Nome del servizio (puoi cambiarlo)
+# env: docker	Usa il Dockerfile per buildare
+# dockerfilePath: ./Dockerfile	Percorso del Dockerfile
+# ADMIN_PASSWORD	Variabile d'ambiente da impostare manualmente nel dashboard
