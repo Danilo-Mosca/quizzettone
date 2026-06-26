@@ -19,7 +19,6 @@ export default function QuizButton() {
             setJoined(true);
             setError(null);
             setConnecting(false);
-            setPlayerName(playerName || msg.playerName);
         }
 
         if (msg.type === 'NAME_TAKEN') {
@@ -115,6 +114,7 @@ export default function QuizButton() {
                             disabled={!playerName}
                             onClick={() => {
                                 setConnecting(true);
+                                setPlayerName(playerName);
                                 sendWelcome(playerName);
                             }}
                         >
