@@ -10,6 +10,7 @@ function Admin() {
     const [players, setPlayers] = useState([]);
     const [winner, setWinner] = useState(null);
     const [scores, setScores] = useState([]);
+    const [loginError, setLoginError] = useState(null);
 
     const socket = useQuizSocket('admin', (msg) => {
         if (msg.type === 'PLAYERS_UPDATE') {
@@ -24,6 +25,15 @@ function Admin() {
         if (msg.type === 'SCORES_UPDATE') {
             setScores(msg.scores);
         }
+        // Server conferma la password → login riuscito
+        if (msg.type === 'ADMIN_OK') {
+            setLoginError(null);
+        }
+        // Server rifiuta la password → logout forzato con errore
+        if (msg.type === 'ADMIN_DENIED') {
+            setLoginError('Password errata');
+            logout();
+        }
     });
 
     useEffect(() => {
@@ -35,8 +45,14 @@ function Admin() {
         }
     }, [isAdmin]);
 
+    // Pulisce l'errore login prima di un nuovo tentativo
+    function handleLogin(password) {
+        setLoginError(null);
+        return login(password);
+    }
+
     if (!isAdmin) {
-        return <AdminLogin onLogin={login} />;
+        return <AdminLogin onLogin={handleLogin} serverError={loginError} />;
     }
 
     return (

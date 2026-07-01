@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-function AdminLogin({ onLogin }) {
+function AdminLogin({ onLogin, serverError }) {
     const [password, setPassword] = useState('');
     const [error, setError] = useState(null);
 
@@ -41,7 +41,10 @@ function AdminLogin({ onLogin }) {
                     </button>
                 </div>
 
-                {error && <div className="admin-login__error">{error}</div>}
+                {/* Mostra errore locale (solo se onLogin torna false) oppure errore dal server */}
+                {(error || serverError) && (
+                    <div className="admin-login__error">{serverError || error}</div>
+                )}
             </div>
         </div>
     );
